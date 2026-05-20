@@ -32,8 +32,8 @@ export default function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="TrustFirst" className="h-12 w-12 object-contain" />
-            <span className="text-xl font-semibold tracking-tight">TrustFirst</span>
+            <img src="/logo.png" alt="YourTrust" className="h-12 w-12 object-contain" />
+            <span className="text-xl font-semibold tracking-tight">YourTrust</span>
             
           </div>
           <div className="flex items-center gap-3">
@@ -165,7 +165,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-16 text-center">
             <h2 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl">
-              How TrustFirst Works
+              How YourTrust Works
             </h2>
             <p className="mx-auto max-w-2xl text-muted-foreground">
               Three simple steps to stress-free lending between friends and family.
@@ -207,7 +207,7 @@ export default function LandingPage() {
             Ready to transform how you lend?
           </h2>
           <p className="mx-auto mb-10 max-w-2xl text-lg text-muted-foreground">
-            Join thousands of users who have simplified their informal finances with TrustFirst.
+            Join thousands of users who have simplified their informal finances with YourTrust.
           </p>
           <Link href="/auth/signup">
             <Button
@@ -225,11 +225,11 @@ export default function LandingPage() {
       <footer className="border-t border-border py-12">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="TrustFirst" className="h-10 w-10 object-contain" />
-            <span className="font-semibold">TrustFirst</span>
+            <img src="/logo.png" alt="YourTrust" className="h-10 w-10 object-contain" />
+            <span className="font-semibold">YourTrust</span>
           </div>
           <p className="text-sm text-muted-foreground">
-            © 2026 TrustFirst. Building trust, one agreement at a time.
+            © 2026 YourTrust. Building trust, one agreement at a time.
           </p>
         </div>
       </footer>

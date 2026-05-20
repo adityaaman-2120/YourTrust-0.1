@@ -175,7 +175,7 @@ export default function CreateGroupPage() {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Members must be registered on TrustFirst
+              Members must be registered on YourTrust
             </p>
           </div>
 

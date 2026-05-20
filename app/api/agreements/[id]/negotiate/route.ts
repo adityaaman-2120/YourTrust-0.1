@@ -113,7 +113,7 @@ export async function POST(
     
     // Try NEAR AI first
     try {
-      const prompt = `You are a helpful AI for TrustFirst lending platform. Respond with JSON only.
+      const prompt = `You are a helpful AI for YourTrust lending platform. Respond with JSON only.
 
 User: ${userRole}
 Amount: ${agreement.amount} KRW

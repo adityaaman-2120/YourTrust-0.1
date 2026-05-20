@@ -131,8 +131,8 @@ export default function SignUpPage() {
           <span className="text-sm">Back</span>
         </Link>
         <div className="flex items-center gap-3">
-          <img src="/logo.png" alt="TrustFirst" className="h-10 w-10 object-contain" />
-          <span className="font-semibold">TrustFirst</span>
+          <img src="/logo.png" alt="YourTrust" className="h-10 w-10 object-contain" />
+          <span className="font-semibold">YourTrust</span>
         </div>
       </header>
 

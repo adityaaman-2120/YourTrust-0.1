@@ -24,7 +24,7 @@ messaging.onBackgroundMessage((payload) => {
     const notificationTitle = payload.notification.title;
     const notificationOptions = {
         body: payload.notification.body,
-        icon: '/logo.png', // TrustFirst logo
+        icon: '/logo.png', // YourTrust logo
     };
 
     self.registration.showNotification(notificationTitle, notificationOptions);

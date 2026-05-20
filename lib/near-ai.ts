@@ -185,7 +185,7 @@ Lender Credit History:
 - Current Trust Score: ${lenderTrustScore}` : `
 Lender Credit History: New user, no past agreements`;
 
-    const prompt = `You are a senior financial risk analyst for TrustFirst, a peer-to-peer lending platform.
+    const prompt = `You are a senior financial risk analyst for YourTrust, a peer-to-peer lending platform.
 
 Analyze this lending agreement with FULL context from both parties' history.
 
@@ -429,7 +429,7 @@ Borrower Context: New user`;
     const baseTone = daysOverdue <= 7 ? 'friendly' : daysOverdue <= 30 ? 'neutral' : 'strict';
     const intent = daysOverdue <= 7 ? 'reminder' : daysOverdue <= 30 ? 'warning' : 'escalation';
 
-    const prompt = `You are TrustFirst AI Mediation Strategy Generator.
+    const prompt = `You are YourTrust AI Mediation Strategy Generator.
 
 Generate the optimal approach for a collection call using real borrower history.
 

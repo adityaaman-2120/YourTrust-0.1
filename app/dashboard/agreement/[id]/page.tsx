@@ -163,7 +163,7 @@ const handleStrictModeToggle = async (checked: boolean) => {
         const blockedMessage = {
           id: `system-blocked-${Date.now()}`,
           role: "system",
-          content: `⚠️ Call Prevented: The borrower is currently detected at a sensitive location (${locationData.locationContext?.description || "Hospital/medical area"}). TrustFirst AI has delayed the call to respect their privacy.`,
+          content: `⚠️ Call Prevented: The borrower is currently detected at a sensitive location (${locationData.locationContext?.description || "Hospital/medical area"}). YourTrust AI has delayed the call to respect their privacy.`,
           timestamp: new Date().toISOString(),
         }
         setAiMessages((prev) => [...prev, blockedMessage])
@@ -846,7 +846,7 @@ const handleStrictModeToggle = async (checked: boolean) => {
             </div>
             <div className="text-left">
               <div className="flex items-center gap-2">
-                <h2 className="font-semibold">TrustFirst AI Mediator</h2>
+                <h2 className="font-semibold">YourTrust AI Mediator</h2>
               </div>
               <p className="text-sm text-muted-foreground">
                 Get AI help with sensitive conversations
@@ -880,7 +880,7 @@ const handleStrictModeToggle = async (checked: boolean) => {
                     {msg.role === "ai" && (
                       <div className="flex items-center gap-2 mb-1 text-xs text-primary">
                         <Sparkles className="h-3 w-3" />
-                        TrustFirst AI
+                        YourTrust AI
                       </div>
                     )}
                     <p className="text-sm">{msg.content}</p>
@@ -902,7 +902,7 @@ const handleStrictModeToggle = async (checked: boolean) => {
                   ? "Calling..."
                   : isLender
                     ? "Ask AI to Call Borrower"
-                    : "Get Call from TrustFirst AI"}
+                    : "Get Call from YourTrust AI"}
               </Button>
 
               {/* Extend Due Date Button (Borrower Only) */}

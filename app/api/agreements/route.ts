@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: 'Borrower not found',
-          message: `${borrowerEmail} is not registered on TrustFirst. They must create an account first.`
+          message: `${borrowerEmail} is not registered on YourTrust. They must create an account first.`
         },
         { status: 404 }
       );
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             error: 'Witness not found',
-            message: `${witnessEmail} is not registered on TrustFirst. They must create an account first.`
+            message: `${witnessEmail} is not registered on YourTrust. They must create an account first.`
           },
           { status: 404 }
         );
@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
       aiMessages: [
         {
           role: 'system',
-          content: 'TrustFirst AI Mediator is ready to help with this agreement.',
+          content: 'YourTrust AI Mediator is ready to help with this agreement.',
           timestamp: new Date(),
         },
       ],

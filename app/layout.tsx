@@ -8,7 +8,7 @@ const _inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'TrustFirst - Trust & Transparency in Informal Finance',
+  title: 'YourTrust - Trust & Transparency in Informal Finance',
   description: 'Manage informal lending between friends and family with AI mediation, trust scores, and legal-free agreements.',
   generator: 'v0.app',
   icons: {

@@ -1,8 +1,8 @@
-# 🤝 TrustFirst - Web3-Powered P2P Lending Platform
+# 🤝 YourTrust - Web3-Powered P2P Lending Platform
 
 <div align="center">
 
-![TrustFirst](https://img.shields.io/badge/TrustFirst-NEAR%20Blockchain-blue?style=for-the-badge)
+![YourTrust](https://img.shields.io/badge/YourTrust-NEAR%20Blockchain-blue?style=for-the-badge)
 ![Next.js](https://img.shields.io/badge/Next.js-16.0-black?style=for-the-badge&logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)
 ![NEAR AI](https://img.shields.io/badge/NEAR-AI%20Cloud-green?style=for-the-badge)
@@ -35,7 +35,7 @@
 
 ## 🌟 Overview
 
-**TrustFirst** is a Web3-powered peer-to-peer lending platform that brings transparency and accountability to informal money lending. Built on NEAR blockchain with AI-powered mediation, TrustFirst transforms casual lending into a secure, trackable, and trust-based experience.
+**YourTrust** is a Web3-powered peer-to-peer lending platform that brings transparency and accountability to informal money lending. Built on NEAR blockchain with AI-powered mediation, YourTrust transforms casual lending into a secure, trackable, and trust-based experience.
 
 ### The Problem
 - Awkward money conversations between friends/family
@@ -46,7 +46,7 @@
 - No privacy in financial negotiations
 
 ### The Solution
-TrustFirst provides:
+YourTrust provides:
 - ✅ **NEAR Blockchain** for transparent, immutable agreements
 - ✅ **NEAR AI Cloud** with TEE security for private AI negotiations
 - ✅ AI-generated personalized repayment plans
@@ -145,7 +145,7 @@ TrustFirst provides:
 ## 🌐 Web3 Integration
 
 ### NEAR Blockchain
-TrustFirst leverages NEAR Protocol for:
+YourTrust leverages NEAR Protocol for:
 
 1. **Agreement Storage**: All agreements stored on-chain
 2. **Immutable Records**: Cannot be altered or deleted
@@ -154,7 +154,7 @@ TrustFirst leverages NEAR Protocol for:
 5. **Decentralized Trust**: No central authority needed
 
 ### NEAR AI Cloud
-TrustFirst uses NEAR AI Cloud for secure AI processing:
+YourTrust uses NEAR AI Cloud for secure AI processing:
 
 1. **TEE Security**: Trusted Execution Environment ensures privacy
 2. **Encrypted Processing**: All AI conversations are encrypted

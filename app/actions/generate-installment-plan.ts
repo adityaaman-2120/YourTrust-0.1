@@ -98,7 +98,7 @@ export async function generateInstallmentPlans(
     const monthsUntilDue = Math.floor(daysUntilDue / 30)
 
     const prompt = `
-    You are an empathetic but professional financial mediator assistant for an app called TrustFirst.
+    You are an empathetic but professional financial mediator assistant for an app called YourTrust.
     Your goal is to generate 3 distinct, realistic, and fair installment repayment plans for a debt.
     
     CONTEXT:

@@ -1,4 +1,4 @@
-# TrustFirst — Complete Feature & Architecture Documentation
+# YourTrust — Complete Feature & Architecture Documentation
 
 > **Version**: 0.1.0 | **Framework**: Next.js 16 (App Router) | **Database**: MongoDB | **Auth**: Firebase | **AI**: NEAR AI Cloud + Google Gemini
 
@@ -36,7 +36,7 @@
 
 ## 1. Project Philosophy
 
-TrustFirst transforms **informal lending** between friends and family into a secure, trackable experience. The core premise: money between people you know doesn't need lawyers or courts — it needs **transparency, trust scores, and AI mediation**.
+YourTrust transforms **informal lending** between friends and family into a secure, trackable experience. The core premise: money between people you know doesn't need lawyers or courts — it needs **transparency, trust scores, and AI mediation**.
 
 ### Problem Space
 - **Awkwardness**: Money conversations strain relationships
@@ -81,8 +81,8 @@ TrustFirst transforms **informal lending** between friends and family into a sec
 ┌──────────────────────────────────────────────────────────────────────┐
 │                    EXTERNAL SERVICES LAYER                           │
 │                                                                      │
-│  ┌──────────┐  ┌──────────────┐  ┌──────────┐  ┌────────────────┐  │
-│  │ MongoDB  │  │  Firebase    │  │ NEAR AI  │  │ Google Gemini  │  │
+│  ┌──────────┐  ┌──────────────┐  ┌──────────┐  ┌────────────────┐    │
+│  │ MongoDB  │  │  Firebase    │  │ NEAR AI  │  │ Google Gemini  │    │
 │  │  Atlas   │  │  Auth + FCM  │  │  Cloud   │  │  2.5 Flash     │  │
 │  ├──────────┤  ├──────────────┤  ├──────────┤  ├────────────────┤  │
 │  │ Mongoose │  │ Admin SDK    │  │OpenAI API│  │ GenAI SDK      │  │
@@ -93,7 +93,7 @@ TrustFirst transforms **informal lending** between friends and family into a sec
 │  │Agreements│  │ Push Notifs  │  │ Analysis │  │ plans w/ dates │  │
 │  │ Groups   │  │              │  │ Strategy │  │ validation     │  │
 │  └──────────┘  └──────────────┘  └──────────┘  └────────────────┘  │
-│                                                                      │
+│                                                                    │
 │  ┌──────────┐  ┌──────────────┐  ┌──────────┐  ┌────────────────┐  │
 │  │ Radar.io │  │  Nodemailer  │  │ VAPI AI  │  │   Make.com     │  │
 │  │Location  │  │  Gmail SMTP  │  │ Voice AI │  │   Webhooks     │  │
@@ -427,7 +427,7 @@ When extension is approved:
   "agreementContext": "...conversation rules...",
   "mediationTone": "friendly" | "neutral" | "strict",
   "mediationIntent": "reminder" | "warning" | "escalation",
-  "mediationOpeningLine": "Hello {borrowerName}, this is TrustFirst AI..."
+  "mediationOpeningLine": "Hello {borrowerName}, this is YourTrust AI..."
 }
 ```
 3. Make.com automation forwards to VAPI AI for voice call execution
@@ -463,7 +463,7 @@ When extension is approved:
 - User provides group name, description
 - Optionally adds member emails (validated against MongoDB)
 - Creator automatically becomes first member with "Admin" badge
-- Only registered TrustFirst users can be added
+- Only registered YourTrust users can be added
 
 **2. Group Detail** (`/dashboard/groups/[id]`):
 - **Admin features**: Add member dialog, remove members, delete group
@@ -743,7 +743,7 @@ const keywords = ["hospital", "emergency", "clinic", "doctor", "health", "pharma
 - Responsive layout (max-width 600px)
 - Gradient headers (green for general, amber for reminders)
 - Clickable buttons with `NEXT_PUBLIC_APP_URL`
-- Footer: "© 2026 TrustFirst. Building trust, one agreement at a time."
+- Footer: "© 2026 YourTrust. Building trust, one agreement at a time."
 
 ### Sending
 - Gmail SMTP (`smtp.gmail.com:587`)
@@ -1197,7 +1197,7 @@ GEMINI_API_KEY=AIzaxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 # === Email (Gmail SMTP) ===
 EMAIL_SERVER_USER=your-email@gmail.com
 EMAIL_SERVER_PASSWORD=app-password-16-char
-EMAIL_FROM=TrustFirst <your-email@gmail.com>
+EMAIL_FROM=YourTrust <your-email@gmail.com>
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 # === Radar.io Location ===
