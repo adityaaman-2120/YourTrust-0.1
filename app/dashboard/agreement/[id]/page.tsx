@@ -469,7 +469,7 @@ const handleStrictModeToggle = async (checked: boolean) => {
             className={`text-2xl font-bold ${isLender ? "text-primary" : "text-orange"
               }`}
           >
-            ₩{agreement.amount.toLocaleString()}
+            ₹{agreement.amount.toLocaleString()}
           </div>
       </div>
 

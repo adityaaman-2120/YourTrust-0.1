@@ -202,7 +202,12 @@ export default function ProfilePage() {
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/20 text-2xl font-bold text-primary">
               {getInitials(user.name)}
             </div>
-            <button className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
+            <button
+              type="button"
+              aria-label="Edit profile"
+              onClick={() => router.push("/dashboard/profile/account")}
+              className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg"
+            >
               <Edit2 className="h-4 w-4" />
             </button>
           </div>
@@ -241,13 +246,13 @@ export default function ProfilePage() {
       <div className="mb-6 grid grid-cols-3 gap-3">
         <div className="rounded-xl border border-border bg-card p-4 text-center">
           <div className="text-2xl font-bold text-primary">
-            ₩{user.totalLent.toLocaleString()}
+            ₹{user.totalLent.toLocaleString()}
           </div>
           <div className="text-xs text-muted-foreground">Total Lent</div>
         </div>
         <div className="rounded-xl border border-border bg-card p-4 text-center">
           <div className="text-2xl font-bold text-orange">
-            ₩{user.totalBorrowed.toLocaleString()}
+            ₹{user.totalBorrowed.toLocaleString()}
           </div>
           <div className="text-xs text-muted-foreground">Total Borrowed</div>
         </div>
@@ -317,6 +322,8 @@ export default function ProfilePage() {
         {menuItems.map((item) => (
           <button
             key={item.id}
+            type="button"
+            onClick={() => router.push(`/dashboard/profile/${item.id}`)}
             className="w-full flex items-center gap-4 rounded-xl border border-border bg-card p-4 transition-colors hover:bg-secondary/50"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary">

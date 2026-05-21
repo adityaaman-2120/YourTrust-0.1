@@ -15,6 +15,7 @@ export interface IUser extends Document {
   updatedAt: Date;
   isVerified: boolean;
   fcmToken?: string;
+  notificationPreferences?: Record<string, boolean>;
 }
 
 const UserSchema: Schema = new Schema(
@@ -73,6 +74,18 @@ const UserSchema: Schema = new Schema(
     },
     fcmToken: {
       type: String,
+    },
+    notificationPreferences: {
+      type: Map,
+      of: Boolean,
+      default: {
+        push: true,
+        email: true,
+        payment_reminders: true,
+        ai_calls: true,
+        group_activity: true,
+        messages: true,
+      },
     },
   },
   {

@@ -335,13 +335,13 @@ Start first installment within 7-14 days, space evenly.`
 3. Confirm → plan saved to DB via `POST /api/agreements/[id]/save-plan`
 4. User redirected to `/upload-proofs?plan=N`
 
-### Example Plans for ₩10,000 / 3 months
+### Example Plans for ₹10,000 / 3 months
 
 | Plan | Duration | Installments |
 |------|----------|-------------|
-| **Quick Payoff** | 1 month | 2 × ₩5,000 |
-| **Balanced Plan** | 2 months | 3 × ₩3,334 |
-| **Flexible Plan** | 3 months | 4 × ₩2,500 |
+| **Quick Payoff** | 1 month | 2 × ₹5,000 |
+| **Balanced Plan** | 2 months | 3 × ₹3,334 |
+| **Flexible Plan** | 3 months | 4 × ₹2,500 |
 
 ---
 
@@ -487,10 +487,10 @@ When extension is approved:
 
 **Example Scenario**:
 ```
-Alice requests ₩10,000 from "College Friends" group
-  → Bob contributes ₩3,000 → Agreement #1 (Bob→Alice, ₩3,000)
-  → Charlie contributes ₩4,000 → Agreement #2 (Charlie→Alice, ₩4,000)
-  → David contributes ₩3,000 → Agreement #3 (David→Alice, ₩3,000)
+Alice requests ₹10,000 from "College Friends" group
+  → Bob contributes ₹3,000 → Agreement #1 (Bob→Alice, ₹3,000)
+  → Charlie contributes ₹4,000 → Agreement #2 (Charlie→Alice, ₹4,000)
+  → David contributes ₹3,000 → Agreement #3 (David→Alice, ₹3,000)
   → Request closes (fulfilled), Alice has 3 agreements to repay individually
 ```
 
@@ -773,7 +773,7 @@ const keywords = ["hospital", "emergency", "clinic", "doctor", "health", "pharma
 
 ### Landing Page (`app/page.tsx`)
 - Hero section with tagline: "Trust & Transparency in Informal Finance"
-- Stats: 10K+ Users, ₩2M+ Managed, 99% Trust Rate
+- Stats: 10K+ Users, ₹2M+ Managed, 99% Trust Rate
 - 3 feature cards: AI Mediation, Trust Scores, Legal-Free Agreements
 - How It Works: 3-step explainer
 - CTA: "Get Started Free"
