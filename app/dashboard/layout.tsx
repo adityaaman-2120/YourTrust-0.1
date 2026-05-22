@@ -4,7 +4,7 @@ import React from "react"
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Plus, User, Bell, Sparkles, Users } from "lucide-react"
+import { Home, Plus, User, Bell, Sparkles, Users, Clock } from "lucide-react"
 import useFcmToken from "@/hooks/useFcmToken"
 
 export default function DashboardLayout({
@@ -19,6 +19,7 @@ export default function DashboardLayout({
     { href: "/dashboard", icon: Home, label: "Home" },
     { href: "/dashboard/create", icon: Plus, label: "Create" },
     { href: "/dashboard/groups", icon: Users, label: "Groups" },
+    { href: "/dashboard/history", icon: Clock, label: "History" },
     { href: "/dashboard/notifications", icon: Bell, label: "Alerts" },
     { href: "/dashboard/profile", icon: User, label: "Profile" },
   ]
