@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, CreditCard, Plus, Banknote, Smartphone, Trash2, Check } from "lucide-react"
+import { ArrowLeft, CreditCard, Plus, Banknote, Smartphone, Trash2, Check, ChevronRight, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -62,7 +62,7 @@ export default function PaymentMethodsPage() {
       const response = await fetch(`/api/payment-methods/${id}`, { method: "DELETE" })
       if (response.ok) {
         setMethods((prev) => prev.filter((m) => m._id !== id))
-        toast({ title: "Deleted", description: "Payment method removed." })
+        toast({ title: "Removed", description: "Payment method deleted." })
       } else {
         toast({ title: "Error", description: "Failed to delete.", variant: "destructive" })
       }
@@ -92,7 +92,7 @@ export default function PaymentMethodsPage() {
         setShowAddForm(false)
         setAddLabel("")
         setAddDetails({})
-        toast({ title: "Added", description: "Payment method added." })
+        toast({ title: "Added", description: "Payment method added successfully." })
       } else {
         const data = await response.json()
         toast({ title: "Error", description: data.error || "Failed to add.", variant: "destructive" })
@@ -115,11 +115,27 @@ export default function PaymentMethodsPage() {
 
   const typeColor = (type: string) => {
     switch (type) {
-      case "upi": return "text-green-500 bg-green-500/10"
-      case "bank": return "text-blue-500 bg-blue-500/10"
-      case "card": return "text-purple-500 bg-purple-500/10"
+      case "upi": return "text-green-600 bg-green-100 dark:bg-green-500/10 dark:text-green-400"
+      case "bank": return "text-blue-600 bg-blue-100 dark:bg-blue-500/10 dark:text-blue-400"
+      case "card": return "text-purple-600 bg-purple-100 dark:bg-purple-500/10 dark:text-purple-400"
       default: return "text-muted-foreground bg-secondary"
     }
+  }
+
+  const typeBadge = (type: string) => {
+    switch (type) {
+      case "upi": return "UPI"
+      case "bank": return "Bank"
+      case "card": return "Card"
+      default: return type
+    }
+  }
+
+  const detailPreview = (method: PaymentMethod) => {
+    if (method.type === "upi") return method.details.upiId || ""
+    if (method.type === "bank") return `••••${method.details.accountNumber?.slice(-4) || ""}`
+    if (method.type === "card") return `•••• ${method.details.cardNumber?.slice(-4) || ""}`
+    return ""
   }
 
   if (loading) {
@@ -147,80 +163,100 @@ export default function PaymentMethodsPage() {
         </div>
       </div>
 
-      <div className="space-y-3 mb-6">
+      {/* Saved Methods */}
+      <div className="rounded-2xl border border-border bg-card overflow-hidden mb-4">
+        <div className="px-6 py-4 border-b border-border">
+          <h2 className="font-semibold">Saved Accounts</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">{methods.length} method{methods.length !== 1 ? "s" : ""} linked</p>
+        </div>
+
         {methods.length === 0 ? (
-          <div className="rounded-2xl border border-border bg-card p-8 text-center">
+          <div className="p-8 text-center">
             <CreditCard className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
             <p className="text-sm text-muted-foreground">No payment methods linked yet</p>
+            <p className="text-xs text-muted-foreground mt-1">Add a method to start making payments</p>
           </div>
         ) : (
-          methods.map((method) => {
-            const Icon = typeIcon(method.type)
-            const colorClass = typeColor(method.type)
-            return (
-              <div
-                key={method._id}
-                className="rounded-2xl border border-border bg-card p-5"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-full ${colorClass}`}>
-                      <Icon className="h-5 w-5" />
+          <div className="divide-y divide-border">
+            {methods.map((method) => {
+              const Icon = typeIcon(method.type)
+              const colorClass = typeColor(method.type)
+              return (
+                <div key={method._id} className="flex items-center gap-3 px-6 py-4 hover:bg-secondary/30 transition-colors group">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-full ${colorClass}`}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-sm truncate">{method.label}</p>
+                      <span className="text-[10px] font-medium uppercase text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">{typeBadge(method.type)}</span>
+                      {method.isDefault && (
+                        <span className="flex items-center gap-0.5 text-[10px] text-primary font-medium">
+                          <Check className="h-2.5 w-2.5" /> Default
+                        </span>
+                      )}
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium capitalize">{method.label}</p>
-                        {method.isDefault && (
-                          <span className="flex items-center gap-1 text-xs text-primary">
-                            <Check className="h-3 w-3" /> Default
-                          </span>
-                        )}
-                      </div>
-                      {Object.entries(method.details).map(([key, val]) => (
-                        <p key={key} className="text-sm text-muted-foreground">
-                          {key}: {val}
-                        </p>
-                      ))}
-                    </div>
+                    {detailPreview(method) && (
+                      <p className="text-xs text-muted-foreground truncate">{detailPreview(method)}</p>
+                    )}
                   </div>
                   <button
                     type="button"
                     onClick={() => handleDelete(method._id)}
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive hover:bg-destructive/10 transition-all"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
-              </div>
-            )
-          })
+              )
+            })}
+          </div>
         )}
       </div>
 
+      {/* Add New Method */}
       {showAddForm ? (
-        <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
-          <h3 className="font-semibold">Add Payment Method</h3>
+        <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-lg">Add New Method</h3>
+            <button
+              type="button"
+              onClick={() => setShowAddForm(false)}
+              className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-secondary transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
 
-          <div className="flex gap-2">
-            {(["upi", "bank", "card"] as const).map((t) => (
-              <Button
-                key={t}
-                type="button"
-                variant={addType === t ? "default" : "outline"}
-                size="sm"
-                onClick={() => { setAddType(t); setAddDetails({}) }}
-                className="capitalize"
-              >
-                {t === "upi" ? "UPI" : t === "bank" ? "Bank" : "Card"}
-              </Button>
-            ))}
+          <div>
+            <Label className="mb-2 block text-sm">Payment Type</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {(["upi", "bank", "card"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => { setAddType(t); setAddDetails({}) }}
+                  className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 transition-all ${addType === t
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-card hover:bg-secondary/50"
+                    }`}
+                >
+                  {t === "upi" ? <Smartphone className={`h-5 w-5 ${addType === t ? "text-primary" : "text-muted-foreground"}`} />
+                    : t === "bank" ? <Banknote className={`h-5 w-5 ${addType === t ? "text-primary" : "text-muted-foreground"}`} />
+                      : <CreditCard className={`h-5 w-5 ${addType === t ? "text-primary" : "text-muted-foreground"}`} />}
+                  <span className={`text-xs font-medium ${addType === t ? "text-primary" : "text-muted-foreground"}`}>
+                    {t === "upi" ? "UPI" : t === "bank" ? "Bank" : "Card"}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="label">Label</Label>
             <Input
               id="label"
-              placeholder={addType === "upi" ? "My UPI" : addType === "bank" ? "My Bank Account" : "My Card"}
+              placeholder={addType === "upi" ? "e.g. Personal UPI" : addType === "bank" ? "e.g. Salary Account" : "e.g. My Credit Card"}
               value={addLabel}
               onChange={(e) => setAddLabel(e.target.value)}
               className="h-12 bg-input border-border"
@@ -237,6 +273,7 @@ export default function PaymentMethodsPage() {
                 onChange={(e) => setAddDetails({ upiId: e.target.value })}
                 className="h-12 bg-input border-border"
               />
+              <p className="text-xs text-muted-foreground">Your UPI VPA address for receiving payments</p>
             </div>
           )}
 
@@ -246,7 +283,7 @@ export default function PaymentMethodsPage() {
                 <Label htmlFor="accName">Account Holder Name</Label>
                 <Input
                   id="accName"
-                  placeholder="John Doe"
+                  placeholder="As per bank records"
                   value={addDetails.accountHolder || ""}
                   onChange={(e) => setAddDetails((prev) => ({ ...prev, accountHolder: e.target.value }))}
                   className="h-12 bg-input border-border"
@@ -256,7 +293,7 @@ export default function PaymentMethodsPage() {
                 <Label htmlFor="accNumber">Account Number</Label>
                 <Input
                   id="accNumber"
-                  placeholder="XXXXXXXXXXXX"
+                  placeholder="Enter account number"
                   value={addDetails.accountNumber || ""}
                   onChange={(e) => setAddDetails((prev) => ({ ...prev, accountNumber: e.target.value }))}
                   className="h-12 bg-input border-border"
@@ -285,6 +322,7 @@ export default function PaymentMethodsPage() {
                   value={addDetails.cardNumber || ""}
                   onChange={(e) => setAddDetails((prev) => ({ ...prev, cardNumber: e.target.value }))}
                   className="h-12 bg-input border-border font-mono"
+                  maxLength={19}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -296,13 +334,14 @@ export default function PaymentMethodsPage() {
                     value={addDetails.expiry || ""}
                     onChange={(e) => setAddDetails((prev) => ({ ...prev, expiry: e.target.value }))}
                     className="h-12 bg-input border-border"
+                    maxLength={5}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cardNetwork">Network</Label>
                   <Input
                     id="cardNetwork"
-                    placeholder="Visa / Mastercard"
+                    placeholder="Visa / Mastercard / RuPay"
                     value={addDetails.cardNetwork || ""}
                     onChange={(e) => setAddDetails((prev) => ({ ...prev, cardNetwork: e.target.value }))}
                     className="h-12 bg-input border-border"
@@ -312,19 +351,19 @@ export default function PaymentMethodsPage() {
             </>
           )}
 
-          <div className="flex gap-3">
+          <div className="flex gap-3 pt-2">
             <Button variant="outline" className="flex-1 h-12" onClick={() => setShowAddForm(false)}>
               Cancel
             </Button>
-            <Button className="flex-1 h-12" onClick={handleAdd} disabled={adding || !addLabel}>
-              {adding ? "Adding..." : "Add"}
+            <Button className="flex-1 h-12 bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleAdd} disabled={adding || !addLabel}>
+              {adding ? "Adding..." : "Save Method"}
             </Button>
           </div>
         </div>
       ) : (
         <Button
           onClick={() => setShowAddForm(true)}
-          className="w-full h-14 bg-primary text-primary-foreground text-lg font-semibold hover:bg-primary/90"
+          className="w-full h-14 bg-primary text-primary-foreground text-base font-semibold hover:bg-primary/90"
         >
           <Plus className="mr-2 h-5 w-5" />
           Add Payment Method

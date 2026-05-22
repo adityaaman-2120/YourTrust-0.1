@@ -152,11 +152,13 @@ isVerified: false
 ## 3.2 Lending Agreements — Full Lifecycle
 
 ### Files
-- `models/Agreement.ts` — Complete agreement schema (85 fields)
-- `app/api/agreements/route.ts` — GET (list by user) + POST (create)
+- `models/Agreement.ts` — Complete agreement schema (100+ fields)
+- `app/api/agreements/route.ts` — GET (list by user) + POST (create, both money & asset)
 - `app/api/agreements/[id]/route.ts` — GET (detail) + PATCH (update) + DELETE
-- `app/dashboard/create/page.tsx` — 4-step creation wizard
-- `app/dashboard/agreement/[id]/page.tsx` — Full detail view
+- `app/dashboard/create/page.tsx` — Choice page (Money Lending / Asset Lending)
+- `app/dashboard/create/money-lending/page.tsx` — 4-step money lending wizard
+- `app/dashboard/create/asset-lending/page.tsx` — 4-step asset lending wizard
+- `app/dashboard/agreement/[id]/page.tsx` — Full detail view (with Pay & Close / Upload & Close)
 
 ### Agreement Lifecycle States
 
@@ -169,7 +171,13 @@ CREATION → pending_witness (if witness added)
            settled OR overdue
 ```
 
-### 4-Step Creation Wizard (`/dashboard/create`)
+### Agreement Creation — Choice Page (`/dashboard/create`)
+The `/create` page now serves as a **launchpad** with two options:
+- **Money Lending** — Standard cash loan with borrower details, buffer days, witness, and proof
+- **Asset Lending** — Physical asset loan with asset details, deposit, and instructions
+
+### Money Lending Wizard (`/dashboard/create/money-lending`)
+Original 4-step wizard for cash loans:
 
 | Step | Fields | Validation |
 |------|--------|------------|
@@ -186,6 +194,23 @@ CREATION → pending_witness (if witness added)
 - Notifications created for both parties
 - Push notification (FCM) sent to borrower
 - Both lender and borrower stats increment (`totalLent`, `totalBorrowed`, `agreementCount`)
+
+### Asset Lending Wizard (`/dashboard/create/asset-lending`)
+New 4-step wizard for lending physical assets:
+
+| Step | Fields | Validation |
+|------|--------|------------|
+| **1. Asset Details** | Borrower name, email, phone, asset name | Name, email required |
+| **2. Asset Condition** | Category (electronics/vehicle/furniture/etc.), condition (new/like-new/good/fair/poor), estimated value, asset photos (multi-upload) | Category, condition, value required |
+| **3. Deposit & Instructions** | Security deposit amount, usage instructions | Always valid |
+| **4. Upload Proof** | Transaction screenshot + auto-extracted transaction ID (deposit proof) | File optional |
+
+**Key differences from Money Lending**:
+- Tracks physical asset details (name, category, condition, photos)
+- No witness step (not applicable for asset lending)
+- Security deposit mechanism for asset protection
+- Separate `dealType: 'asset'` in DB
+- Return process involves Upload & Close (borrower returns asset + uploads proof)
 
 ### Agreement Detail View (`/dashboard/agreement/[id]`)
 
@@ -205,8 +230,9 @@ CREATION → pending_witness (if witness added)
 10. **Borrower Details**: Name, email, phone
 11. **Action Buttons**:
     - Witness approval (witness only)
-    - Upload proof + mark as paid (borrower only)
-    - Settle up / Close loan (lender only)
+    - Pay & Close / Upload proof + mark as paid (borrower only — opens payment method dialog)
+    - Upload & Close (borrower for asset lending — uploads asset return proof)
+    - Settle up / Close loan (lender only — opens payment method dialog for settlement)
 
 ---
 
@@ -795,6 +821,30 @@ const keywords = ["hospital", "emergency", "clinic", "doctor", "health", "pharma
 - `useFcmToken()` called once in layout
 - Backdrop blur on both headers
 
+### Profile Subpages (`/dashboard/profile/*`)
+Multi-tab profile section with 5 subpages:
+
+| Route | Tab | Key Features |
+|-------|-----|-------------|
+| `/dashboard/profile/account` | Account | Edit name & phone, saved to MongoDB via `PATCH /api/users/[uid]` |
+| `/dashboard/profile/security` | Security | Auth method display (Google/Email), linked account info |
+| `/dashboard/profile/paymentmethod` | Payment Methods | Full CRUD for UPI/Bank/Card — saved via `/api/payment-methods` |
+| `/dashboard/profile/notifications` | Notifications | Push preference toggle: all / borrower only / lender only / none |
+| `/dashboard/profile/help` | Help & Support | FAQ accordions + email support link |
+
+**Payment Method CRUD flow**:
+1. User adds a method (UPI ID, bank account with IFSC, card last 4 digits)
+2. Each method has type, label, details (key-value pairs), and default flag
+3. `GET /api/payment-methods?userId=` fetches saved methods
+4. `POST /api/payment-methods` creates new method (clears other defaults if isDefault=true)
+5. `DELETE /api/payment-methods/[id]` removes a method
+6. Methods appear as selectable cards in settlement dialogs (Pay & Close / Settle up)
+
+**Notification Preferences**:
+- Stored on `User.notificationPreferences.push` (enum: `all`, `borrower_only`, `lender_only`, `none`)
+- Saved via `PATCH /api/users/[uid]` endpoint
+- Filters which push notifications the user receives
+
 ---
 
 # 4. Data Models
@@ -813,6 +863,9 @@ totalBorrowed: Number (default: 0)
 agreementCount: Number (default: 0)
 isVerified: Boolean (default: false)
 fcmToken: String (optional)
+notificationPreferences: {
+  push: 'all' | 'borrower_only' | 'lender_only' | 'none' (default: 'all')
+}
 timestamps: true
 ```
 
@@ -829,8 +882,16 @@ amount: Number (min 0)
 purpose: String (optional)
 createdDate: Date (default: now)
 dueDate: Date (required)
+dealType: 'money' | 'asset' (default: 'money')
 status: 'active' | 'pending_witness' | 'reviewing' | 'settled' | 'overdue'
 type: 'lent' | 'borrowed'
+assetName: String (optional)
+assetCategory: String (optional, e.g., electronics, vehicle, furniture)
+assetCondition: String (optional, e.g., new, like-new, good, fair, poor)
+estimatedValue: Number (optional)
+deposit: Number (optional, security deposit amount)
+instructions: String (optional, usage instructions)
+assetPhotos: [{ url: String, uploadedAt: Date }] (optional)
 trustScore: Number (0-100, default: 80)
 strictMode: Boolean (default: false)
 bufferDays: Number (0-14, default: 3)
@@ -921,6 +982,16 @@ agreementId: String (optional)
 timestamps: true
 ```
 
+## 4.7 PaymentMethod (`models/PaymentMethod.ts`)
+```
+userId: String (indexed)
+type: 'upi' | 'bank' | 'card'
+label: String (e.g., "My UPI", "SBI Account")
+details: Map of String (key-value, e.g. upiId, accountNumber, ifsc, cardLast4)
+isDefault: Boolean (default: false)
+timestamps: true
+```
+
 ---
 
 # 5. API Route Reference
@@ -983,6 +1054,13 @@ timestamps: true
 | GET | `/api/notifications?userId=` | List notifications (newest first) |
 | POST | `/api/notifications` | Create notification |
 | PATCH | `/api/notifications` | Mark notification as read |
+
+## Payment Methods (`/api/payment-methods`)
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET | `/api/payment-methods?userId=` | List payment methods for user (sorted: default first) |
+| POST | `/api/payment-methods` | Create payment method (clears other defaults if isDefault) |
+| DELETE | `/api/payment-methods/[id]` | Delete payment method |
 
 ## Other Routes
 | Method | Route | Description |

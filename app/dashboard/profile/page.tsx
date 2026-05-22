@@ -47,7 +47,7 @@ const menuItems = [
     icon: Shield,
   },
   {
-    id: "payment",
+    id: "paymentmethod",
     title: "Payment Methods",
     description: "Manage your linked accounts",
     icon: CreditCard,

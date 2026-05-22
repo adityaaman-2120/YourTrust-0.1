@@ -24,6 +24,9 @@ import {
   ChevronRight,
   Check,
   X,
+  Banknote,
+  Smartphone,
+  CreditCard,
 } from "lucide-react"
 import { InstallmentPlanGenerator } from "@/components/installment-plan-generator"
 import { Button } from "@/components/ui/button"
@@ -53,6 +56,10 @@ export default function AgreementDetailPage({
   const [selectedExtensionDays, setSelectedExtensionDays] = useState(1)
   const [isExtending, setIsExtending] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false)
+  const [paymentMethods, setPaymentMethods] = useState<any[]>([])
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null)
+  const [isPaying, setIsPaying] = useState(false)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   // Extension modal states initialized
@@ -411,7 +418,7 @@ const handleStrictModeToggle = async (checked: boolean) => {
 
       if (response.ok) {
         alert("Agreement settled successfully!")
-        await fetchAgreement() // Refresh agreement data
+        await fetchAgreement()
         router.push("/dashboard")
       } else {
         alert("Failed to settle agreement")
@@ -419,6 +426,63 @@ const handleStrictModeToggle = async (checked: boolean) => {
     } catch (error) {
       console.error("Error settling agreement:", error)
       alert("Failed to settle agreement")
+    }
+  }
+
+  const openPaymentDialog = async () => {
+    if (!currentUserId) return
+    try {
+      const res = await fetch(`/api/payment-methods?userId=${currentUserId}`)
+      const data = await res.json()
+      setPaymentMethods(data.methods || [])
+      if (data.methods?.length > 0) {
+        setSelectedPaymentMethod(data.methods[0]._id)
+      }
+      setShowPaymentDialog(true)
+    } catch {
+      alert("Failed to load payment methods")
+    }
+  }
+
+  const handlePayAndClose = async () => {
+    if (!selectedPaymentMethod) {
+      alert("Please select a payment method")
+      return
+    }
+    setIsPaying(true)
+    try {
+      const response = await fetch(`/api/agreements/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: "settled",
+          borrowerProof: {
+            fileName: `payment-${Date.now()}.txt`,
+            fileUrl: `/payments/${selectedPaymentMethod}`,
+            uploadedAt: new Date().toISOString(),
+          },
+          timeline: [
+            ...agreement.timeline,
+            {
+              event: "Payment Completed",
+              date: new Date().toISOString(),
+              completed: true,
+            },
+          ],
+        }),
+      })
+      if (response.ok) {
+        alert("Payment successful! Agreement settled.")
+        setShowPaymentDialog(false)
+        await fetchAgreement()
+        router.push("/dashboard")
+      } else {
+        alert("Payment failed")
+      }
+    } catch {
+      alert("Payment failed")
+    } finally {
+      setIsPaying(false)
     }
   }
 
@@ -970,7 +1034,7 @@ const handleStrictModeToggle = async (checked: boolean) => {
           </Button>
         )}
 
-        {/* Borrower Actions - Upload Proof (Future Feature) */}
+        {/* Borrower Actions - Pay & Close / Upload & Close */}
         {isBorrower && agreement.status !== "settled" && agreement.status !== "reviewing" && (
           <>
             <input
@@ -980,15 +1044,24 @@ const handleStrictModeToggle = async (checked: boolean) => {
               className="hidden"
               accept="image/*"
             />
-            <Button
-              variant="outline"
-              onClick={triggerFileUpload}
-              disabled={isUploading}
-              className="w-full h-14 border-primary text-primary hover:bg-primary/10"
-            >
-              <Upload className="mr-2 h-5 w-5" />
-              {isUploading ? "Uploading..." : "Mark as Paid & Upload Proof"}
-            </Button>
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                onClick={openPaymentDialog}
+                className="h-14 bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Banknote className="mr-2 h-5 w-5" />
+                Pay & Close
+              </Button>
+              <Button
+                variant="outline"
+                onClick={triggerFileUpload}
+                disabled={isUploading}
+                className="h-14 border-primary text-primary hover:bg-primary/10"
+              >
+                <Upload className="mr-2 h-5 w-5" />
+                {isUploading ? "Uploading..." : "Upload & Close"}
+              </Button>
+            </div>
           </>
         )}
 
@@ -1011,6 +1084,90 @@ const handleStrictModeToggle = async (checked: boolean) => {
           </div>
         )}
       </div>
+
+      {/* Payment Dialog */}
+      {showPaymentDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-xl border border-border max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold">Select Payment Method</h3>
+              <button
+                type="button"
+                onClick={() => setShowPaymentDialog(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-secondary transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {paymentMethods.length === 0 ? (
+              <div className="text-center py-8">
+                <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground mb-4">No payment methods added yet.</p>
+                <Link
+                  href="/dashboard/profile/paymentmethod"
+                  className="text-sm text-primary hover:underline font-medium"
+                  onClick={() => setShowPaymentDialog(false)}
+                >
+                  Add a payment method
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3 mb-6">
+                <p className="text-sm font-medium">Amount to pay: <span className="text-primary font-bold">₹{agreement.amount.toLocaleString()}</span></p>
+                <div className="space-y-2">
+                  {paymentMethods.map((method: any) => {
+                    const Icon = method.type === "upi" ? Smartphone : method.type === "bank" ? Banknote : CreditCard
+                    return (
+                      <button
+                        key={method._id}
+                        type="button"
+                        onClick={() => setSelectedPaymentMethod(method._id)}
+                        className={`w-full flex items-center gap-3 rounded-xl border p-4 transition-all text-left ${selectedPaymentMethod === method._id
+                          ? "border-primary bg-primary/5 ring-1 ring-primary"
+                          : "border-border bg-card hover:bg-secondary/50"
+                          }`}
+                      >
+                        <div className={`flex h-10 w-10 items-center justify-center rounded-full ${method.type === "upi" ? "bg-green-500/10 text-green-500" : method.type === "bank" ? "bg-blue-500/10 text-blue-500" : "bg-purple-500/10 text-purple-500"}`}>
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium capitalize">{method.label}</p>
+                          {Object.entries(method.details).slice(0, 1).map(([key, val]) => (
+                            <p key={key} className="text-sm text-muted-foreground truncate">{val}</p>
+                          ))}
+                        </div>
+                        {selectedPaymentMethod === method._id && (
+                          <Check className="h-5 w-5 text-primary" />
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {paymentMethods.length > 0 && (
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1 h-12"
+                  onClick={() => setShowPaymentDialog(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1 h-12 bg-primary text-primary-foreground hover:bg-primary/90"
+                  onClick={handlePayAndClose}
+                  disabled={isPaying}
+                >
+                  {isPaying ? "Processing..." : `Pay ₹${agreement.amount.toLocaleString()}`}
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Extension Modal */}
       {showExtensionModal && agreement && agreement.bufferDays > 0 && (
