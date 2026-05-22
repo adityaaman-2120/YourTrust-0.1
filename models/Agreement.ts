@@ -15,7 +15,6 @@ export interface IAgreement extends Document {
   assetCategory?: string;
   assetCondition?: string;
   estimatedValue?: number;
-  deposit?: number;
   instructions?: string;
   assetPhotos?: Array<{
     fileName: string;
@@ -149,9 +148,6 @@ const AgreementSchema: Schema = new Schema(
       type: String,
     },
     estimatedValue: {
-      type: Number,
-    },
-    deposit: {
       type: Number,
     },
     instructions: {

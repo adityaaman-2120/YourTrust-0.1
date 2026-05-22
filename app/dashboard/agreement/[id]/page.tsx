@@ -27,6 +27,7 @@ import {
   Banknote,
   Smartphone,
   CreditCard,
+  Package,
 } from "lucide-react"
 import { InstallmentPlanGenerator } from "@/components/installment-plan-generator"
 import { Button } from "@/components/ui/button"
@@ -56,10 +57,8 @@ export default function AgreementDetailPage({
   const [selectedExtensionDays, setSelectedExtensionDays] = useState(1)
   const [isExtending, setIsExtending] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
-  const [showPaymentDialog, setShowPaymentDialog] = useState(false)
-  const [paymentMethods, setPaymentMethods] = useState<any[]>([])
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null)
-  const [isPaying, setIsPaying] = useState(false)
+  const [isConfirmingReceipt, setIsConfirmingReceipt] = useState(false)
+  // Payment states removed (handled in dedicated pay page)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   // Extension modal states initialized
@@ -375,7 +374,7 @@ const handleStrictModeToggle = async (checked: boolean) => {
           timeline: [
             ...agreement.timeline,
             {
-              event: "Payment Proof Uploaded",
+              event: agreement.dealType === 'asset' ? "Asset Return Proof Uploaded" : "Payment Proof Uploaded",
               date: new Date().toISOString(),
               completed: true,
             },
@@ -387,7 +386,10 @@ const handleStrictModeToggle = async (checked: boolean) => {
         throw new Error("Failed to update agreement")
       }
 
-      alert("Proof uploaded successfully! Agreement is now under review.")
+      alert(agreement.dealType === 'asset'
+        ? "Return proof uploaded successfully! The lender will verify the asset return."
+        : "Proof uploaded successfully! Agreement is now under review."
+      )
       await fetchAgreement() // Refresh data
     } catch (error: any) {
       console.error("Error uploading proof:", error)
@@ -429,60 +431,44 @@ const handleStrictModeToggle = async (checked: boolean) => {
     }
   }
 
-  const openPaymentDialog = async () => {
-    if (!currentUserId) return
-    try {
-      const res = await fetch(`/api/payment-methods?userId=${currentUserId}`)
-      const data = await res.json()
-      setPaymentMethods(data.methods || [])
-      if (data.methods?.length > 0) {
-        setSelectedPaymentMethod(data.methods[0]._id)
-      }
-      setShowPaymentDialog(true)
-    } catch {
-      alert("Failed to load payment methods")
-    }
+  const openPaymentDialog = () => {
+    router.push(`/dashboard/agreement/${id}/pay`)
   }
 
-  const handlePayAndClose = async () => {
-    if (!selectedPaymentMethod) {
-      alert("Please select a payment method")
-      return
-    }
-    setIsPaying(true)
+  const handleConfirmReceipt = async () => {
+    const confirmMsg = agreement.dealType === 'asset'
+      ? `Confirm that ${agreement.borrowerName} has returned the ${agreement.assetName || 'item'}? This will permanently settle and close the agreement.`
+      : `Confirm that you have received ₹${agreement.amount.toLocaleString()} from ${agreement.borrowerName}? This will permanently settle and close the agreement.`
+    if (!confirm(confirmMsg)) return
+    setIsConfirmingReceipt(true)
     try {
-      const response = await fetch(`/api/agreements/${id}`, {
+      const res = await fetch(`/api/agreements/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           status: "settled",
-          borrowerProof: {
-            fileName: `payment-${Date.now()}.txt`,
-            fileUrl: `/payments/${selectedPaymentMethod}`,
-            uploadedAt: new Date().toISOString(),
-          },
           timeline: [
             ...agreement.timeline,
             {
-              event: "Payment Completed",
+              event: agreement.dealType === 'asset'
+                ? `Lender ${agreement.lenderName} confirmed asset return — Agreement settled`
+                : `Lender ${agreement.lenderName} confirmed receipt — Agreement settled`,
               date: new Date().toISOString(),
               completed: true,
             },
           ],
         }),
       })
-      if (response.ok) {
-        alert("Payment successful! Agreement settled.")
-        setShowPaymentDialog(false)
+      if (res.ok) {
         await fetchAgreement()
         router.push("/dashboard")
       } else {
-        alert("Payment failed")
+        alert("Failed to confirm. Please try again.")
       }
     } catch {
-      alert("Payment failed")
+      alert("Something went wrong.")
     } finally {
-      setIsPaying(false)
+      setIsConfirmingReceipt(false)
     }
   }
 
@@ -526,15 +512,27 @@ const handleStrictModeToggle = async (checked: boolean) => {
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="flex-1">
-          <h1 className="text-xl font-bold">{agreement.borrowerName}</h1>
-          <p className="text-sm text-muted-foreground">{agreement.purpose || "No purpose specified"}</p>
+          {agreement.dealType === 'asset' ? (
+            <>
+              <h1 className="text-xl font-bold">{agreement.assetName}</h1>
+              <p className="text-sm text-muted-foreground">
+                Lent to {agreement.borrowerName}
+                {agreement.instructions && <> &middot; {agreement.instructions}</>}
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-xl font-bold">{agreement.borrowerName}</h1>
+              <p className="text-sm text-muted-foreground">{agreement.purpose || "No purpose specified"}</p>
+            </>
+          )}
         </div>
-        <div
-            className={`text-2xl font-bold ${isLender ? "text-primary" : "text-orange"
-              }`}
-          >
-            ₹{agreement.amount.toLocaleString()}
+        <div className="flex flex-col items-end">
+          <div className={`text-2xl font-bold ${isLender ? "text-primary" : "text-orange"}`}>
+            ₹{(agreement.dealType === 'asset' ? agreement.estimatedValue : agreement.amount).toLocaleString()}
           </div>
+
+        </div>
       </div>
 
       {/* Status & Due Date */}
@@ -567,24 +565,73 @@ const handleStrictModeToggle = async (checked: boolean) => {
           </div>
         </div>
 
-        <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-4">
-          {agreement.witnessApproved ? (
-            <CheckCircle2 className="h-8 w-8 text-primary" />
-          ) : (
-            <Users className="h-8 w-8 text-orange" />
-          )}
-          <div>
-            <div className="text-sm text-muted-foreground">Witness Status</div>
-            <div className="font-semibold">{agreement.witnessName}</div>
-            <div
-              className={`text-sm ${agreement.witnessApproved ? "text-primary" : "text-orange"
-                }`}
-            >
-              {agreement.witnessApproved ? "Approved" : "Pending Approval"}
+        {agreement.witnessName ? (
+          <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-4">
+            {agreement.witnessApproved ? (
+              <CheckCircle2 className="h-8 w-8 text-primary" />
+            ) : (
+              <Users className="h-8 w-8 text-orange" />
+            )}
+            <div>
+              <div className="text-sm text-muted-foreground">Witness Status</div>
+              <div className="font-semibold">{agreement.witnessName}</div>
+              <div
+                className={`text-sm ${agreement.witnessApproved ? "text-primary" : "text-orange"
+                  }`}
+              >
+                {agreement.witnessApproved ? "Approved" : "Pending Approval"}
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-4">
+            <Package className="h-8 w-8 text-muted-foreground" />
+            <div>
+              <div className="text-sm text-muted-foreground">
+                {agreement.dealType === 'asset' ? 'Asset Type' : 'Agreement Type'}
+              </div>
+              <div className="font-semibold">
+                {agreement.dealType === 'asset' ? 'Asset Lending' : 'Money Lending'}
+              </div>
+              <div className="text-sm text-muted-foreground">No witness required</div>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Asset Details (for asset lending) */}
+      {agreement.dealType === 'asset' && (
+        <div className="mb-6 rounded-xl border border-border bg-card p-6">
+          <h2 className="text-lg font-semibold mb-4">Asset Details</h2>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            {agreement.assetCategory && (
+              <div>
+                <span className="text-muted-foreground">Category</span>
+                <p className="font-medium">{agreement.assetCategory}</p>
+              </div>
+            )}
+            {agreement.assetCondition && (
+              <div>
+                <span className="text-muted-foreground">Condition</span>
+                <p className="font-medium">{agreement.assetCondition}</p>
+              </div>
+            )}
+            {agreement.estimatedValue > 0 && (
+              <div>
+                <span className="text-muted-foreground">Estimated Value</span>
+                <p className="font-medium">₹{agreement.estimatedValue.toLocaleString()}</p>
+              </div>
+            )}
+
+          </div>
+          {agreement.instructions && (
+            <div className="mt-4 pt-4 border-t border-border">
+              <span className="text-xs text-muted-foreground block mb-1">Usage Instructions</span>
+              <p className="text-sm">{agreement.instructions}</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Trust Score */}
       <div className="mb-6 rounded-xl border border-border bg-card p-6">
@@ -807,22 +854,24 @@ const handleStrictModeToggle = async (checked: boolean) => {
           </div>
         )}
 
-        <div className="mt-4">
-          <p className="text-sm text-muted-foreground mb-4">
-            Let AI suggest an optimal installment plan based on the amount and
-            timeline.
-          </p>
-          <InstallmentPlanGenerator
-            amount={agreement.amount}
-            dueDate={agreement.dueDate}
-            borrowerName={agreement.borrowerName}
-            agreementId={id}
-            onPlanConfirmed={(plan, planIndex) => {
-              // Navigate to payment proof upload page
-              router.push(`/dashboard/agreement/${id}/upload-proofs?plan=${planIndex}`)
-            }}
-          />
-        </div>
+        {agreement.dealType !== 'asset' && (
+          <div className="mt-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Let AI suggest an optimal installment plan based on the amount and
+              timeline.
+            </p>
+            <InstallmentPlanGenerator
+              amount={agreement.amount}
+              dueDate={agreement.dueDate}
+              borrowerName={agreement.borrowerName}
+              agreementId={id}
+              onPlanConfirmed={(plan, planIndex) => {
+                // Navigate to payment proof upload page
+                router.push(`/dashboard/agreement/${id}/upload-proofs?plan=${planIndex}`)
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {/* Proof Gallery */}
@@ -833,7 +882,7 @@ const handleStrictModeToggle = async (checked: boolean) => {
           <div className="rounded-lg border border-border bg-secondary/30 p-4">
             <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
               <User className="h-4 w-4" />
-              {"Lender's Proof"}
+              {agreement.dealType === 'asset' ? "Deposit Proof" : "Lender's Proof"}
             </div>
             {agreement.lenderProof ? (
               <div className="flex items-center gap-3 rounded-lg bg-card p-3">
@@ -862,7 +911,7 @@ const handleStrictModeToggle = async (checked: boolean) => {
           <div className="rounded-lg border border-border bg-secondary/30 p-4">
             <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
               <User className="h-4 w-4" />
-              {"Borrower's Repayment Proof"}
+              {agreement.dealType === 'asset' ? "Asset Return Proof" : "Borrower's Repayment Proof"}
             </div>
             {agreement.borrowerProof ? (
               <div className="flex items-center gap-3 rounded-lg bg-card p-3">
@@ -890,11 +939,38 @@ const handleStrictModeToggle = async (checked: boolean) => {
               <div className="flex flex-col items-center justify-center py-4 text-center">
                 <Upload className="h-8 w-8 text-muted-foreground mb-2" />
                 <div className="text-sm text-muted-foreground">
-                  Waiting for borrower
+                  {agreement.dealType === 'asset' ? "Waiting for borrower to return asset" : "Waiting for borrower"}
                 </div>
               </div>
             )}
           </div>
+
+          {/* Asset Photos (for asset lending) */}
+          {agreement.dealType === 'asset' && agreement.assetPhotos && agreement.assetPhotos.length > 0 && (
+            <div className="sm:col-span-2 rounded-lg border border-border bg-secondary/30 p-4">
+              <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
+                <ImageIcon className="h-4 w-4" />
+                Asset Photos
+              </div>
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                {agreement.assetPhotos.map((photo: { fileName: string; fileUrl: string; uploadedAt?: Date }, idx: number) => (
+                  <a
+                    key={idx}
+                    href={photo.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block aspect-square rounded-lg overflow-hidden border border-border bg-card hover:ring-2 ring-primary/50 transition-all"
+                  >
+                    <img
+                      src={photo.fileUrl}
+                      alt={photo.fileName || `Asset photo ${idx + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1044,35 +1120,84 @@ const handleStrictModeToggle = async (checked: boolean) => {
               className="hidden"
               accept="image/*"
             />
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                onClick={openPaymentDialog}
-                className="h-14 bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                <Banknote className="mr-2 h-5 w-5" />
-                Pay & Close
-              </Button>
+            {agreement.dealType === 'asset' ? (
               <Button
                 variant="outline"
                 onClick={triggerFileUpload}
                 disabled={isUploading}
-                className="h-14 border-primary text-primary hover:bg-primary/10"
+                className="w-full h-14 border-primary text-primary hover:bg-primary/10"
               >
                 <Upload className="mr-2 h-5 w-5" />
-                {isUploading ? "Uploading..." : "Upload & Close"}
+                {isUploading ? "Uploading..." : "Upload Return Proof & Close"}
               </Button>
-            </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  onClick={openPaymentDialog}
+                  className="h-14 bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  <Banknote className="mr-2 h-5 w-5" />
+                  Pay & Close
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={triggerFileUpload}
+                  disabled={isUploading}
+                  className="h-14 border-primary text-primary hover:bg-primary/10"
+                >
+                  <Upload className="mr-2 h-5 w-5" />
+                  {isUploading ? "Uploading..." : "Upload & Close"}
+                </Button>
+              </div>
+            )}
           </>
         )}
 
-        {/* Lender Actions - Settle Agreement */}
-        {isLender && agreement.status !== "settled" && (
+        {/* Lender Actions */}
+        {isLender && agreement.status === "reviewing" && (
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-bold text-primary">
+                  {agreement.dealType === 'asset' ? 'Borrower has submitted asset return proof' : 'Borrower has submitted payment proof'}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {agreement.dealType === 'asset'
+                    ? `${agreement.borrowerName} claims to have returned the ${agreement.assetName || 'item'}. Check the proof and confirm.`
+                    : `${agreement.borrowerName} claims to have paid ₹${agreement.amount.toLocaleString()}. Check your UPI / bank statement to verify, then confirm receipt.`}
+                </p>
+              </div>
+            </div>
+            {agreement.borrowerProof?.fileUrl && (
+              <a
+                href={agreement.borrowerProof.fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-xs font-medium text-primary hover:bg-secondary transition-colors"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                {agreement.dealType === 'asset' ? 'View return proof' : 'View payment screenshot'} — {agreement.borrowerProof.fileName}
+              </a>
+            )}
+            <Button
+              onClick={handleConfirmReceipt}
+              disabled={isConfirmingReceipt}
+              className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 font-bold"
+            >
+              <CheckCircle2 className="mr-2 h-5 w-5" />
+              {isConfirmingReceipt ? "Confirming..." : agreement.dealType === 'asset' ? `Confirm Asset Return of ${agreement.assetName || 'item'}` : `Confirm Receipt of ₹${agreement.amount.toLocaleString()}`}
+            </Button>
+          </div>
+        )}
+
+        {isLender && agreement.status !== "settled" && agreement.status !== "reviewing" && (
           <Button
             onClick={handleSettleAgreement}
             className="w-full h-14 bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <CheckCircle2 className="mr-2 h-5 w-5" />
-            Settle Up / Close Loan
+            {agreement.dealType === 'asset' ? 'Accept Return / Close' : 'Settle Up / Close Loan'}
           </Button>
         )}
 
@@ -1085,89 +1210,7 @@ const handleStrictModeToggle = async (checked: boolean) => {
         )}
       </div>
 
-      {/* Payment Dialog */}
-      {showPaymentDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card rounded-xl border border-border max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold">Select Payment Method</h3>
-              <button
-                type="button"
-                onClick={() => setShowPaymentDialog(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-secondary transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            {paymentMethods.length === 0 ? (
-              <div className="text-center py-8">
-                <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground mb-4">No payment methods added yet.</p>
-                <Link
-                  href="/dashboard/profile/paymentmethod"
-                  className="text-sm text-primary hover:underline font-medium"
-                  onClick={() => setShowPaymentDialog(false)}
-                >
-                  Add a payment method
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-3 mb-6">
-                <p className="text-sm font-medium">Amount to pay: <span className="text-primary font-bold">₹{agreement.amount.toLocaleString()}</span></p>
-                <div className="space-y-2">
-                  {paymentMethods.map((method: any) => {
-                    const Icon = method.type === "upi" ? Smartphone : method.type === "bank" ? Banknote : CreditCard
-                    return (
-                      <button
-                        key={method._id}
-                        type="button"
-                        onClick={() => setSelectedPaymentMethod(method._id)}
-                        className={`w-full flex items-center gap-3 rounded-xl border p-4 transition-all text-left ${selectedPaymentMethod === method._id
-                          ? "border-primary bg-primary/5 ring-1 ring-primary"
-                          : "border-border bg-card hover:bg-secondary/50"
-                          }`}
-                      >
-                        <div className={`flex h-10 w-10 items-center justify-center rounded-full ${method.type === "upi" ? "bg-green-500/10 text-green-500" : method.type === "bank" ? "bg-blue-500/10 text-blue-500" : "bg-purple-500/10 text-purple-500"}`}>
-                          <Icon className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium capitalize">{method.label}</p>
-                          {Object.entries(method.details).slice(0, 1).map(([key, val]) => (
-                            <p key={key} className="text-sm text-muted-foreground truncate">{val}</p>
-                          ))}
-                        </div>
-                        {selectedPaymentMethod === method._id && (
-                          <Check className="h-5 w-5 text-primary" />
-                        )}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            {paymentMethods.length > 0 && (
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  className="flex-1 h-12"
-                  onClick={() => setShowPaymentDialog(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  className="flex-1 h-12 bg-primary text-primary-foreground hover:bg-primary/90"
-                  onClick={handlePayAndClose}
-                  disabled={isPaying}
-                >
-                  {isPaying ? "Processing..." : `Pay ₹${agreement.amount.toLocaleString()}`}
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Payment Dialog Removed (Handled on dedicated page) */}
 
       {/* Extension Modal */}
       {showExtensionModal && agreement && agreement.bufferDays > 0 && (

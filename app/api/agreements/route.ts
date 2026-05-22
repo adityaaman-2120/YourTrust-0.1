@@ -73,7 +73,6 @@ export async function POST(request: NextRequest) {
       assetCategory,
       assetCondition,
       estimatedValue,
-      deposit,
       instructions,
       assetPhotos,
     } = body;
@@ -165,7 +164,7 @@ export async function POST(request: NextRequest) {
       borrowerEmail,
       borrowerPhone,
       dealType,
-      amount: dealType === 'money' ? amount : 0,
+      amount: amount || 0,
       purpose,
       dueDate: new Date(dueDate),
       type: 'lent',
@@ -187,7 +186,6 @@ export async function POST(request: NextRequest) {
       agreementData.assetCategory = assetCategory || '';
       agreementData.assetCondition = assetCondition || '';
       agreementData.estimatedValue = estimatedValue || amount || 0;
-      agreementData.deposit = deposit || 0;
       agreementData.instructions = instructions || '';
       agreementData.assetPhotos = assetPhotos || [];
     }

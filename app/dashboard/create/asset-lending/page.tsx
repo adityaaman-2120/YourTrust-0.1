@@ -85,7 +85,6 @@ export default function AssetLendingPage() {
     estimatedValue: "",
     returnDate: "",
     condition: "",
-    deposit: "",
     instructions: "",
     bufferDays: 3,
     witnessName: "",
@@ -191,7 +190,6 @@ export default function AssetLendingPage() {
         dealType: "asset",
         amount: parseFloat(formData.estimatedValue) || 0,
         estimatedValue: parseFloat(formData.estimatedValue) || 0,
-        deposit: formData.deposit ? parseFloat(formData.deposit) : 0,
         assetName: formData.assetName,
         assetCategory: formData.assetCategory,
         assetCondition: formData.condition,
@@ -464,36 +462,19 @@ export default function AssetLendingPage() {
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="returnDate" className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  Expected Return Date
-                </Label>
-                <Input
-                  id="returnDate"
-                  name="returnDate"
-                  type="date"
-                  value={formData.returnDate}
-                  onChange={handleChange}
-                  className="h-12 bg-input border-border"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="deposit" className="flex items-center gap-2">
-                  <BadgeDollarSign className="h-4 w-4 text-muted-foreground" />
-                  Deposit (Optional, ₹)
-                </Label>
-                <Input
-                  id="deposit"
-                  name="deposit"
-                  type="number"
-                  placeholder="5000"
-                  value={formData.deposit}
-                  onChange={handleChange}
-                  className="h-12 bg-input border-border"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="returnDate" className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                Expected Return Date
+              </Label>
+              <Input
+                id="returnDate"
+                name="returnDate"
+                type="date"
+                value={formData.returnDate}
+                onChange={handleChange}
+                className="h-12 bg-input border-border"
+              />
             </div>
 
             <div className="space-y-2">

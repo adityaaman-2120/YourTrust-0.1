@@ -200,17 +200,17 @@ New 4-step wizard for lending physical assets:
 
 | Step | Fields | Validation |
 |------|--------|------------|
-| **1. Asset Details** | Borrower name, email, phone, asset name | Name, email required |
-| **2. Asset Condition** | Category (electronics/vehicle/furniture/etc.), condition (new/like-new/good/fair/poor), estimated value, asset photos (multi-upload) | Category, condition, value required |
-| **3. Deposit & Instructions** | Security deposit amount, usage instructions | Always valid |
-| **4. Upload Proof** | Transaction screenshot + auto-extracted transaction ID (deposit proof) | File optional |
+| **1. Asset Details** | Borrower name, email, phone, asset name, category, condition, estimated value, return date, usage instructions | Name, email, asset name, category, condition, value, return date required |
+| **2. Buffer Days** | Slider 0–14 days (private to lender) | Always valid |
+| **3. Add Witness** | Witness name, email, phone (optional) | Always valid |
+| **4. Upload Photos** | Asset photos (multi-upload, for condition proof) | File optional |
 
 **Key differences from Money Lending**:
 - Tracks physical asset details (name, category, condition, photos)
-- No witness step (not applicable for asset lending)
-- Security deposit mechanism for asset protection
+- No monetary amount — uses estimated value instead
+- Asset photos for condition documentation
 - Separate `dealType: 'asset'` in DB
-- Return process involves Upload & Close (borrower returns asset + uploads proof)
+- Return process involves "Upload Return Proof" (borrower returns asset + uploads proof)
 
 ### Agreement Detail View (`/dashboard/agreement/[id]`)
 
@@ -889,7 +889,6 @@ assetName: String (optional)
 assetCategory: String (optional, e.g., electronics, vehicle, furniture)
 assetCondition: String (optional, e.g., new, like-new, good, fair, poor)
 estimatedValue: Number (optional)
-deposit: Number (optional, security deposit amount)
 instructions: String (optional, usage instructions)
 assetPhotos: [{ url: String, uploadedAt: Date }] (optional)
 trustScore: Number (0-100, default: 80)
