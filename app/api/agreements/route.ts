@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
       borrowerName,
       borrowerEmail,
       borrowerPhone,
+      dealType = 'money',
       amount,
       purpose,
       dueDate,
@@ -68,11 +69,32 @@ export async function POST(request: NextRequest) {
       witnessEmail,
       witnessPhone,
       proofFile,
+      assetName,
+      assetCategory,
+      assetCondition,
+      estimatedValue,
+      deposit,
+      instructions,
+      assetPhotos,
     } = body;
 
-    if (!lenderId || !lenderName || !lenderEmail || !borrowerName || !borrowerEmail || !amount || !dueDate) {
+    if (!lenderId || !lenderName || !lenderEmail || !borrowerName || !borrowerEmail || !dueDate) {
       return NextResponse.json(
         { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    if (dealType === 'money' && !amount) {
+      return NextResponse.json(
+        { error: 'Amount is required for money lending' },
+        { status: 400 }
+      );
+    }
+
+    if (dealType === 'asset' && !assetName) {
+      return NextResponse.json(
+        { error: 'Asset name is required for asset lending' },
         { status: 400 }
       );
     }
@@ -107,8 +129,8 @@ export async function POST(request: NextRequest) {
     const timeline = [
       { event: 'Agreement Created', date: new Date(), completed: true },
       { event: 'Witness Approved', date: witnessEmail ? null : new Date(), completed: !witnessEmail },
-      { event: 'Money Sent', date: proofFile ? new Date() : null, completed: !!proofFile },
-      { event: 'Payment Received', date: null, completed: false },
+      { event: dealType === 'money' ? 'Money Sent' : 'Asset Delivered', date: proofFile ? new Date() : null, completed: !!proofFile },
+      { event: dealType === 'money' ? 'Payment Received' : 'Asset Returned', date: null, completed: false },
     ];
 
     // NEAR AI Trust Score Analysis with Full History
@@ -134,7 +156,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create agreement
-    const agreement = await Agreement.create({
+    const agreementData: any = {
       lenderId,
       lenderName,
       lenderEmail,
@@ -142,7 +164,8 @@ export async function POST(request: NextRequest) {
       borrowerName,
       borrowerEmail,
       borrowerPhone,
-      amount,
+      dealType,
+      amount: dealType === 'money' ? amount : 0,
       purpose,
       dueDate: new Date(dueDate),
       type: 'lent',
@@ -157,44 +180,60 @@ export async function POST(request: NextRequest) {
         fileUrl: proofFile.fileUrl,
         uploadedAt: new Date(),
       } : undefined,
-      timeline,
-      aiMessages: [
-        {
-          role: 'system',
-          content: 'YourTrust AI Mediator is ready to help with this agreement.',
-          timestamp: new Date(),
-        },
-      ],
-      aiAnalysis: aiAnalysis || undefined,
-      borrowerCreditReport: aiAnalysis?.borrowerCreditReport ? {
-        totalAgreements: aiAnalysis.borrowerCreditReport.totalAgreements,
-        onTimeRate: aiAnalysis.borrowerCreditReport.onTimeRate,
-        lateCount: aiAnalysis.borrowerCreditReport.lateCount,
-        totalAmount: aiAnalysis.borrowerCreditReport.totalAmount,
-        avgAmount: aiAnalysis.borrowerCreditReport.avgAmount,
-      } : {
-        totalAgreements: 0,
-        onTimeRate: 100,
-        lateCount: 0,
-        totalAmount: 0,
-        avgAmount: 0,
+    }
+
+    if (dealType === 'asset') {
+      agreementData.assetName = assetName || '';
+      agreementData.assetCategory = assetCategory || '';
+      agreementData.assetCondition = assetCondition || '';
+      agreementData.estimatedValue = estimatedValue || amount || 0;
+      agreementData.deposit = deposit || 0;
+      agreementData.instructions = instructions || '';
+      agreementData.assetPhotos = assetPhotos || [];
+    }
+
+    agreementData.timeline = timeline;
+    agreementData.aiMessages = [
+      {
+        role: 'system',
+        content: 'YourTrust AI Mediator is ready to help with this agreement.',
+        timestamp: new Date(),
       },
-      lenderCreditReport: aiAnalysis?.lenderCreditReport ? {
-        totalAgreements: aiAnalysis.lenderCreditReport.totalAgreements,
-        avgAmount: aiAnalysis.lenderCreditReport.avgAmount,
-        totalAmount: aiAnalysis.lenderCreditReport.totalAmount,
-      } : {
-        totalAgreements: 0,
-        avgAmount: 0,
-        totalAmount: 0,
-      },
-    });
+    ];
+    agreementData.aiAnalysis = aiAnalysis || undefined;
+    agreementData.borrowerCreditReport = aiAnalysis?.borrowerCreditReport ? {
+      totalAgreements: aiAnalysis.borrowerCreditReport.totalAgreements,
+      onTimeRate: aiAnalysis.borrowerCreditReport.onTimeRate,
+      lateCount: aiAnalysis.borrowerCreditReport.lateCount,
+      totalAmount: aiAnalysis.borrowerCreditReport.totalAmount,
+      avgAmount: aiAnalysis.borrowerCreditReport.avgAmount,
+    } : {
+      totalAgreements: 0,
+      onTimeRate: 100,
+      lateCount: 0,
+      totalAmount: 0,
+      avgAmount: 0,
+    };
+    agreementData.lenderCreditReport = aiAnalysis?.lenderCreditReport ? {
+      totalAgreements: aiAnalysis.lenderCreditReport.totalAgreements,
+      avgAmount: aiAnalysis.lenderCreditReport.avgAmount,
+      totalAmount: aiAnalysis.lenderCreditReport.totalAmount,
+    } : {
+      totalAgreements: 0,
+      avgAmount: 0,
+      totalAmount: 0,
+    };
+
+    const agreement = await Agreement.create(agreementData);
+
+    const displayValue = dealType === 'asset' ? (estimatedValue || amount || 0) : amount;
+    const displayName = dealType === 'asset' ? (assetName || 'item') : `₹${displayValue}`;
 
     // Update lender's stats
     await User.findOneAndUpdate(
       { uid: lenderId },
       {
-        $inc: { totalLent: amount, agreementCount: 1 },
+        $inc: { totalLent: displayValue, agreementCount: 1 },
       }
     );
 
@@ -202,7 +241,7 @@ export async function POST(request: NextRequest) {
     await User.findOneAndUpdate(
       { uid: borrowerUser.uid },
       {
-        $inc: { totalBorrowed: amount, agreementCount: 1 },
+        $inc: { totalBorrowed: displayValue, agreementCount: 1 },
       }
     );
 
@@ -210,8 +249,10 @@ export async function POST(request: NextRequest) {
     await Notification.create({
       userId: lenderId,
       type: 'agreement_created',
-      title: 'Agreement Created',
-      description: `You created an agreement with ${borrowerName} for $${amount}`,
+      title: dealType === 'asset' ? 'Asset Agreement Created' : 'Agreement Created',
+      description: dealType === 'asset'
+        ? `You created an asset agreement with ${borrowerName} for ${assetName || 'item'}`
+        : `You created an agreement with ${borrowerName} for ₹${amount}`,
       agreementId: agreement._id.toString(),
     });
 
@@ -219,8 +260,10 @@ export async function POST(request: NextRequest) {
     await Notification.create({
       userId: borrowerUser.uid,
       type: 'agreement_created',
-      title: 'New Lending Agreement',
-      description: `${lenderName} created a lending agreement with you for $${amount}`,
+      title: dealType === 'asset' ? 'New Asset Agreement' : 'New Lending Agreement',
+      description: dealType === 'asset'
+        ? `${lenderName} created an asset agreement with you for ${assetName || 'item'}`
+        : `${lenderName} created a lending agreement with you for ₹${amount}`,
       agreementId: agreement._id.toString(),
     });
 
@@ -228,7 +271,7 @@ export async function POST(request: NextRequest) {
     const borrowerEmailTemplate = emailTemplates.agreementRequest(
       lenderName,
       borrowerName,
-      amount,
+      displayValue,
       dueDate,
       agreement._id.toString()
     );

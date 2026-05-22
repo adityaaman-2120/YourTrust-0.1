@@ -8,8 +8,20 @@ export interface IAgreement extends Document {
   borrowerName: string;
   borrowerEmail: string;
   borrowerPhone?: string;
+  dealType: 'money' | 'asset';
   amount: number;
   purpose?: string;
+  assetName?: string;
+  assetCategory?: string;
+  assetCondition?: string;
+  estimatedValue?: number;
+  deposit?: number;
+  instructions?: string;
+  assetPhotos?: Array<{
+    fileName: string;
+    fileUrl: string;
+    uploadedAt: Date;
+  }>;
   createdDate: Date;
   dueDate: Date;
   status: 'active' | 'pending_witness' | 'reviewing' | 'settled' | 'overdue';
@@ -114,6 +126,11 @@ const AgreementSchema: Schema = new Schema(
     borrowerPhone: {
       type: String,
     },
+    dealType: {
+      type: String,
+      enum: ['money', 'asset'],
+      default: 'money',
+    },
     amount: {
       type: Number,
       required: true,
@@ -122,6 +139,31 @@ const AgreementSchema: Schema = new Schema(
     purpose: {
       type: String,
     },
+    assetName: {
+      type: String,
+    },
+    assetCategory: {
+      type: String,
+    },
+    assetCondition: {
+      type: String,
+    },
+    estimatedValue: {
+      type: Number,
+    },
+    deposit: {
+      type: Number,
+    },
+    instructions: {
+      type: String,
+    },
+    assetPhotos: [
+      {
+        fileName: String,
+        fileUrl: String,
+        uploadedAt: Date,
+      },
+    ],
     createdDate: {
       type: Date,
       default: Date.now,
